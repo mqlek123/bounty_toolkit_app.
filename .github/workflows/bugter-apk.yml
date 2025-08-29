@@ -8,14 +8,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1) Java 17 بۆ Gradle/AGP
+      # Java 17 بۆ Gradle/AGP
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      # 2) Android SDK + cmdline-tools
+      # Android SDK + cmdline-tools
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
@@ -24,20 +24,20 @@ jobs:
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
-      # 3) Flutter
+      # Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.3'
           channel: 'stable'
 
-      # 4) Create minimal app + deps
+      # پڕۆژەی نوێ دروست بکە و پەکەیجەکان زیاد بکە
       - name: Create Flutter project skeleton
         run: |
           flutter create . --project-name bounty_toolkit_app
           flutter pub add http shared_preferences
 
-      # 5) Android manifest & network security (cleartext dev)
+      # Manifest + Network Security (cleartext بۆ dev)
       - name: Patch Android manifest + security config
         run: |
           mkdir -p android/app/src/main/res/xml
@@ -52,7 +52,8 @@ jobs:
           XML
 
           cat > android/app/src/main/AndroidManifest.xml <<'XML'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.bounty_toolkit_app">
             <uses-permission android:name="android.permission.INTERNET"/>
             <application
                 android:label="Bounty Toolkit"
@@ -75,7 +76,17 @@ jobs:
           </manifest>
           XML
 
-      # 6) App UI (calls your FastAPI backend)
+      # 🔧 فیکسکردنی Android v2 embedding (MainActivity)
+      - name: Patch MainActivity to Android v2 embedding
+        run: |
+          mkdir -p android/app/src/main/java/com/example/bounty_toolkit_app
+          cat > android/app/src/main/java/com/example/bounty_toolkit_app/MainActivity.java <<'JAVA'
+          package com.example.bounty_toolkit_app;
+          import io.flutter.embedding.android.FlutterActivity;
+          public class MainActivity extends FlutterActivity { }
+          JAVA
+
+      # UI ـی ئەپ (calls FastAPI backend)
       - name: Write app UI (lib/main.dart)
         run: |
           cat > lib/main.dart <<'DART'
@@ -151,16 +162,7 @@ jobs:
             }
           }
           DART
-# 5b) Fix MainActivity to use v2 embedding
-      - name: Patch MainActivity to Android v2 embedding
-        run: |
-          mkdir -p android/app/src/main/java/com/example/bounty_toolkit_app
-          cat > android/app/src/main/java/com/example/bounty_toolkit_app/MainActivity.java <<'JAVA'
-          package com.example.bounty_toolkit_app;
-          import io.flutter.embedding.android.FlutterActivity;
-          public class MainActivity extends FlutterActivity {
-          }
-          JAVA
+
       - name: Build release APK
         run: flutter build apk --release
 
