@@ -151,7 +151,16 @@ jobs:
             }
           }
           DART
-
+# 5b) Fix MainActivity to use v2 embedding
+      - name: Patch MainActivity to Android v2 embedding
+        run: |
+          mkdir -p android/app/src/main/java/com/example/bounty_toolkit_app
+          cat > android/app/src/main/java/com/example/bounty_toolkit_app/MainActivity.java <<'JAVA'
+          package com.example.bounty_toolkit_app;
+          import io.flutter.embedding.android.FlutterActivity;
+          public class MainActivity extends FlutterActivity {
+          }
+          JAVA
       - name: Build release APK
         run: flutter build apk --release
 
